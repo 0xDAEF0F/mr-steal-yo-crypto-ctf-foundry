@@ -101,7 +101,7 @@ contract AssetWrapper is AssetHolder, Ownable {
             assetOwner == msg.sender ||
                 isApprovedForAll(assetOwner, msg.sender) || // approval for all WLed contracts
                 asset.isApprovedForAll(assetOwner, msg.sender), // approval for this WL contract
-            "Wrapper: asset if not owned by sender"
+            "Wrapper: asset is not owned by sender"
         );
 
         _unwrap(assetOwner, assetAddress);
