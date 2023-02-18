@@ -44,6 +44,7 @@ contract SafuWalletLibrary {
   event MultiTransact(address owner, bytes32 operation, uint value, address to, bytes data, address created);
   // Confirmation still needed for a transaction.
   event ConfirmationNeeded(bytes32 operation, address initiator, uint value, address to, bytes data);
+  event LogWhatever(bytes32 log);
 
 
   // TYPES
@@ -162,6 +163,7 @@ contract SafuWalletLibrary {
   // shortcuts for the other confirmations (allowing them to avoid replicating the _to, _value
   // and _data arguments). They still get the option of using them if they want, anyways.
   function execute(address _to, uint _value, bytes _data) external onlyowner returns (bytes32 o_hash) {
+    LogWhatever("logging");
     // first, take the opportunity to check that we're under the daily limit.
     if ((_data.length == 0 && underLimit(_value)) || m_required == 1) {
       // yes - just execute the call.

