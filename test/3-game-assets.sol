@@ -94,20 +94,9 @@ contract A {
         aw.wrap(_nftId, address(this), _gameAsset);
     }
 
-    function onERC1155Received(
-        address,
-        address,
-        uint256 id,
-        uint256,
-        bytes calldata
-    ) external returns (bytes4) {
+    function onERC1155Received(address, address, uint256 id, uint256, bytes calldata) external returns (bytes4) {
         require(msg.sender == address(aw), "WHO ARE YOU, SER");
         aw.unwrap(address(this), id == 0 ? swordAsset : shieldAsset);
-        return
-            bytes4(
-                keccak256(
-                    "onERC1155Received(address,address,uint256,uint256,bytes)"
-                )
-            );
+        return bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"));
     }
 }

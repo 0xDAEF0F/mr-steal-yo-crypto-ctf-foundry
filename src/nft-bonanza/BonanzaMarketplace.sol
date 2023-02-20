@@ -1,18 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.7;
 
-import '@openzeppelin/contracts/access/Ownable.sol';
-import '@openzeppelin/contracts/interfaces/IERC165.sol';
-import '@openzeppelin/contracts/token/ERC1155/IERC1155.sol';
-import '@openzeppelin/contracts/token/ERC721/IERC721.sol';
-import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/interfaces/IERC165.sol";
+import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-
 
 /// @dev marketplace which supports whitelisted ERC721 & ERC1155 tokens
 contract BonanzaMarketplace is Ownable, ReentrancyGuard {
-
     using SafeERC20 for IERC20;
 
     bytes4 private constant INTERFACE_ID_ERC721 = 0x80ac58cd;
@@ -59,41 +57,24 @@ contract BonanzaMarketplace is Ownable, ReentrancyGuard {
     );
 
     event ItemSold(
-        address seller,
-        address buyer,
-        address nftAddress,
-        uint256 tokenId,
-        uint256 quantity,
-        uint256 pricePerItem
+        address seller, address buyer, address nftAddress, uint256 tokenId, uint256 quantity, uint256 pricePerItem
     );
 
     event ItemCanceled(address seller, address nftAddress, uint256 tokenId);
 
-    modifier isListed(
-        address _nftAddress,
-        uint256 _tokenId,
-        address _owner
-    ) {
+    modifier isListed(address _nftAddress, uint256 _tokenId, address _owner) {
         Listing memory listing = listings[_nftAddress][_tokenId][_owner];
         require(listing.quantity > 0, "not listed item");
         _;
     }
 
-    modifier notListed(
-        address _nftAddress,
-        uint256 _tokenId,
-        address _owner
-    ) {
+    modifier notListed(address _nftAddress, uint256 _tokenId, address _owner) {
         Listing memory listing = listings[_nftAddress][_tokenId][_owner];
         require(listing.quantity == 0, "already listed");
         _;
     }
 
-    modifier validListing(
-        address _nftAddress,
-        uint256 _tokenId,
-        address _owner
-    ) {
+    modifier validListing(address _nftAddress, uint256 _tokenId, address _owner) {
         Listing memory listedItem = listings[_nftAddress][_tokenId][_owner];
         if (IERC165(_nftAddress).supportsInterface(INTERFACE_ID_ERC721)) {
             IERC721 nft = IERC721(_nftAddress);
@@ -142,20 +123,9 @@ contract BonanzaMarketplace is Ownable, ReentrancyGuard {
             revert("invalid nft address");
         }
 
-        listings[_nftAddress][_tokenId][_msgSender()] = Listing(
-            _quantity,
-            _pricePerItem,
-            _expirationTime
-        );
+        listings[_nftAddress][_tokenId][_msgSender()] = Listing(_quantity, _pricePerItem, _expirationTime);
 
-        emit ItemListed(
-            _msgSender(),
-            _nftAddress,
-            _tokenId,
-            _quantity,
-            _pricePerItem,
-            _expirationTime
-        );
+        emit ItemListed(_msgSender(), _nftAddress, _tokenId, _quantity, _pricePerItem, _expirationTime);
     }
 
     function updateListing(
@@ -182,14 +152,7 @@ contract BonanzaMarketplace is Ownable, ReentrancyGuard {
         listedItem.pricePerItem = _newPricePerItem;
         listedItem.expirationTime = _newExpirationTime;
 
-        emit ItemUpdated(
-            _msgSender(),
-            _nftAddress,
-            _tokenId,
-            _newQuantity,
-            _newPricePerItem,
-            _newExpirationTime
-        );
+        emit ItemUpdated(_msgSender(), _nftAddress, _tokenId, _newQuantity, _newPricePerItem, _newExpirationTime);
     }
 
     function cancelListing(address _nftAddress, uint256 _tokenId)
@@ -200,11 +163,7 @@ contract BonanzaMarketplace is Ownable, ReentrancyGuard {
         _cancelListing(_nftAddress, _tokenId, _msgSender());
     }
 
-    function _cancelListing(
-        address _nftAddress,
-        uint256 _tokenId,
-        address _owner
-    ) internal {
+    function _cancelListing(address _nftAddress, uint256 _tokenId, address _owner) internal {
         Listing memory listedItem = listings[_nftAddress][_tokenId][_owner];
         if (IERC165(_nftAddress).supportsInterface(INTERFACE_ID_ERC721)) {
             IERC721 nft = IERC721(_nftAddress);
@@ -220,12 +179,7 @@ contract BonanzaMarketplace is Ownable, ReentrancyGuard {
         emit ItemCanceled(_owner, _nftAddress, _tokenId);
     }
 
-    function buyItem(
-        address _nftAddress,
-        uint256 _tokenId,
-        address _owner,
-        uint256 _quantity
-    )
+    function buyItem(address _nftAddress, uint256 _tokenId, address _owner, uint256 _quantity)
         external
         nonReentrant
         isListed(_nftAddress, _tokenId, _owner)
@@ -249,25 +203,14 @@ contract BonanzaMarketplace is Ownable, ReentrancyGuard {
             listings[_nftAddress][_tokenId][_owner].quantity -= _quantity;
         }
 
-        emit ItemSold(
-            _owner,
-            _msgSender(),
-            _nftAddress,
-            _tokenId,
-            _quantity,
-            listedItem.pricePerItem
-        );
+        emit ItemSold(_owner, _msgSender(), _nftAddress, _tokenId, _quantity, listedItem.pricePerItem);
 
         _buyItem(listedItem.pricePerItem, _quantity, _owner);
     }
 
-    function _buyItem(
-        uint256 _pricePerItem,
-        uint256 _quantity,
-        address _owner
-    ) internal {
+    function _buyItem(uint256 _pricePerItem, uint256 _quantity, address _owner) internal {
         uint256 totalPrice = _pricePerItem * _quantity;
-        uint256 feeAmount = totalPrice * fee / BASIS_POINTS;
+        uint256 feeAmount = (totalPrice * fee) / BASIS_POINTS;
         IERC20(paymentToken).safeTransferFrom(_msgSender(), feeReceipient, feeAmount);
         IERC20(paymentToken).safeTransferFrom(_msgSender(), _owner, totalPrice - feeAmount);
     }
@@ -300,5 +243,4 @@ contract BonanzaMarketplace is Ownable, ReentrancyGuard {
         nftWhitelist[_nft] = false;
         emit NftWhitelistRemove(_nft);
     }
-
 }

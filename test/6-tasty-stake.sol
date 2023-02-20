@@ -60,7 +60,7 @@ contract Testing is Test {
 
         // --other user stakes initial amount of steak
         vm.prank(adminUser);
-        steak.approve(address(tastyStaking), type(uint).max);
+        steak.approve(address(tastyStaking), type(uint256).max);
         vm.prank(adminUser);
         tastyStaking.stakeAll();
 

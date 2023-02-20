@@ -27,9 +27,7 @@ contract Testing is Test {
 
         // deploying core contracts
         vm.prank(admin);
-        safuWalletLibrary = ISafuWalletLibrary(
-            deployCode("out/SafuWalletLibrary.sol/SafuWalletLibrary.json")
-        );
+        safuWalletLibrary = ISafuWalletLibrary(deployCode("out/SafuWalletLibrary.sol/SafuWalletLibrary.json"));
 
         address[] memory addresses = new address[](1);
         addresses[0] = adminUser;
@@ -46,12 +44,7 @@ contract Testing is Test {
         payable(safuWallet).transfer(100e18);
 
         // admin withdraws 50 ETH from the wallet
-        bytes memory data = abi.encodeWithSignature(
-            "execute(address,uint256,bytes)",
-            admin,
-            50e18,
-            ""
-        );
+        bytes memory data = abi.encodeWithSignature("execute(address,uint256,bytes)", admin, 50e18, "");
         vm.prank(admin);
         address(safuWallet).call(data);
 
@@ -69,12 +62,7 @@ contract Testing is Test {
         assertEq(address(safuWallet).balance, 50 ether);
 
         vm.startPrank(adminUser);
-        bytes memory data = abi.encodeWithSignature(
-            "execute(address,uint256,bytes)",
-            adminUser,
-            50e18,
-            ""
-        );
+        bytes memory data = abi.encodeWithSignature("execute(address,uint256,bytes)", adminUser, 50e18, "");
         address(safuWallet).call(data);
 
         assertEq(address(safuWallet).balance, 0);
@@ -84,10 +72,7 @@ contract Testing is Test {
 
     function testAA() public {
         vm.startPrank(attacker);
-        bytes memory data = abi.encodeWithSignature(
-            "underLimit(uint256)",
-            50e18
-        );
+        bytes memory data = abi.encodeWithSignature("underLimit(uint256)", 50e18);
         (bool success, bytes memory d) = address(safuWallet).call(data);
 
         assertTrue(success);
@@ -96,11 +81,8 @@ contract Testing is Test {
 
     function testAB() public {
         vm.startPrank(attacker);
-        bytes memory data = abi.encodeWithSignature(
-            "isOwner(address)",
-            address(admin)
-        );
-        (bool success, ) = address(safuWallet).call(data);
+        bytes memory data = abi.encodeWithSignature("isOwner(address)", address(admin));
+        (bool success,) = address(safuWallet).call(data);
         assertTrue(success);
     }
 
@@ -113,12 +95,7 @@ contract Testing is Test {
     /// expected final state
     function validation() public {
         // admin attempting to withdraw final 50 ETH - should fail
-        bytes memory data = abi.encodeWithSignature(
-            "execute(address,uint256,bytes)",
-            admin,
-            50e18,
-            ""
-        );
+        bytes memory data = abi.encodeWithSignature("execute(address,uint256,bytes)", admin, 50e18, "");
         vm.prank(admin);
         address(safuWallet).call(data);
 

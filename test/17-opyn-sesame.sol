@@ -10,18 +10,16 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {OptionsContract} from "src/opyn-sesame/OptionsContract.sol";
 import {OptionsMarket} from "src/opyn-sesame/OptionsMarket.sol";
 
-
 contract Testing is Test {
-
-    address attacker = makeAddr('attacker');
-    address o1 = makeAddr('o1');
-    address o2 = makeAddr('o2');
-    address admin = makeAddr('admin'); // should not be used
-    address adminUser = makeAddr('adminUser'); // should not be used
-    address adminUser2 = makeAddr('adminUser2'); // should not be used
-    address adminUser3 = makeAddr('adminUser3'); // should not be used
-    address adminUser4 = makeAddr('adminUser4'); // should not be used
-    address adminUser5 = makeAddr('adminUser5'); // should not be used
+    address attacker = makeAddr("attacker");
+    address o1 = makeAddr("o1");
+    address o2 = makeAddr("o2");
+    address admin = makeAddr("admin"); // should not be used
+    address adminUser = makeAddr("adminUser"); // should not be used
+    address adminUser2 = makeAddr("adminUser2"); // should not be used
+    address adminUser3 = makeAddr("adminUser3"); // should not be used
+    address adminUser4 = makeAddr("adminUser4"); // should not be used
+    address adminUser5 = makeAddr("adminUser5"); // should not be used
     address[] addresses; // list of admin addresses
 
     Token usdc;
@@ -30,7 +28,6 @@ contract Testing is Test {
 
     /// preliminary state
     function setUp() public {
-
         // funding accounts
         vm.deal(admin, 10_000 ether);
         vm.deal(attacker, 10_000 ether);
@@ -41,7 +38,7 @@ contract Testing is Test {
         usdc = new Token('USDC','USDC');
 
         vm.prank(admin);
-        usdc.mint(attacker,500e18); // attacker starts w/ 500 USDC
+        usdc.mint(attacker, 500e18); // attacker starts w/ 500 USDC
 
         // deploying core contracts
         vm.prank(admin);
@@ -62,26 +59,27 @@ contract Testing is Test {
 
         // --adminUser(s) issue 1 option each
         addresses = new address[](5);
-        addresses[0]=adminUser;  addresses[1]=adminUser2;
-        addresses[2]=adminUser3; addresses[3]=adminUser4;
-        addresses[4]=adminUser5;
+        addresses[0] = adminUser;
+        addresses[1] = adminUser2;
+        addresses[2] = adminUser3;
+        addresses[3] = adminUser4;
+        addresses[4] = adminUser5;
 
-        for (uint i=0; i<5; ++i) {
+        for (uint256 i = 0; i < 5; ++i) {
             vm.prank(admin);
-            usdc.mint(addresses[i],2_000e18);
-            
+            usdc.mint(addresses[i], 2_000e18);
+
             vm.prank(addresses[i]);
-            usdc.approve(address(optionsContract),2_000e18);
+            usdc.approve(address(optionsContract), 2_000e18);
 
             vm.prank(addresses[i]);
             optionsContract.createAndSellERC20CollateralOption(2_000e18);
         }
-
     }
 
     /// solves the challenge
     function testChallengeExploit() public {
-        vm.startPrank(attacker,attacker);
+        vm.startPrank(attacker, attacker);
 
         // implement solution here
 
@@ -91,12 +89,9 @@ contract Testing is Test {
 
     /// expected final state
     function validation() public {
-
         // attacker acquires all USDC from options contract - doesn't use more than 1 ETH
-        assertEq(usdc.balanceOf(address(optionsContract)),0);
-        assertGe(usdc.balanceOf(attacker),10_000e18);
-        assertGe(attacker.balance,10_000e18-1e18);
-
+        assertEq(usdc.balanceOf(address(optionsContract)), 0);
+        assertGe(usdc.balanceOf(attacker), 10_000e18);
+        assertGe(attacker.balance, 10_000e18 - 1e18);
     }
-
 }

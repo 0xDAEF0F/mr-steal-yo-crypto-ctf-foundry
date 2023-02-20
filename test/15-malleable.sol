@@ -7,15 +7,13 @@ import {console} from "forge-std/console.sol";
 // core contracts
 import {TreasureVault} from "src/malleable/TreasureVault.sol";
 
-
 contract Testing is Test {
-
-    address attacker = makeAddr('attacker');
-    address o1 = makeAddr('o1');
-    address o2 = makeAddr('o2');
+    address attacker = makeAddr("attacker");
+    address o1 = makeAddr("o1");
+    address o2 = makeAddr("o2");
     uint256 adminPrivateKey = 111111; // should not be used
     address admin = vm.addr(adminPrivateKey); // should not be used
-    address adminUser = makeAddr('adminUser'); // should not be used
+    address adminUser = makeAddr("adminUser"); // should not be used
 
     TreasureVault treasureVault;
     uint8 v;
@@ -24,12 +22,11 @@ contract Testing is Test {
 
     /// preliminary state
     function setUp() public {
-
         // funding accounts
         vm.deal(admin, 10_000 ether);
         vm.deal(attacker, 10_000 ether);
         vm.deal(adminUser, 10_000 ether);
-        
+
         // deploying core contract
         vm.prank(admin);
         treasureVault = new TreasureVault();
@@ -44,19 +41,18 @@ contract Testing is Test {
                 abi.encodePacked(
                     "\x19\x01",
                     treasureVault.DOMAIN_SEPARATOR(),
-                    keccak256(abi.encode(treasureVault.TYPEHASH(),1e18,0))
+                    keccak256(abi.encode(treasureVault.TYPEHASH(), 1e18, 0))
                 )
             )
         );
 
-        vm.prank(adminUser,adminUser); // tx.origin
-        treasureVault.sendFundsWithAuth(1e18,0,v,r,s);
-
+        vm.prank(adminUser, adminUser); // tx.origin
+        treasureVault.sendFundsWithAuth(1e18, 0, v, r, s);
     }
 
     /// solves the challenge
     function testChallengeExploit() public {
-        vm.startPrank(attacker,attacker);
+        vm.startPrank(attacker, attacker);
 
         // implement solution here
 
@@ -66,11 +62,8 @@ contract Testing is Test {
 
     /// expected final state
     function validation() public {
-
         // attacker drains ETH from contract
-        assertGt(attacker.balance,10_000e18);
-        assertEq(address(treasureVault).balance,0);
-
+        assertGt(attacker.balance, 10_000e18);
+        assertEq(address(treasureVault).balance, 0);
     }
-
 }
